@@ -73,5 +73,6 @@ var readMousePosn = function (event) {
         mouseX: my_data.x-(page_width /2)+event.pageX, 
         mouseY: my_data.y-(page_height/2)+event.pageY
     };
+    console.log(data); 
     socket.emit('mousePosition', data); 
 }

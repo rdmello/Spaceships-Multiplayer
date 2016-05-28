@@ -60,16 +60,28 @@ var new_user = function () {
 
 var update_user = function (data) {
     var my_data = game_context.user_data[data.id]; 
-    my_data.mouseX = data.mouseX;
-    my_data.mouseY = data.mouseY; 
+    if(data.mouseX !== null) my_data.mouseX = data.mouseX;
+    if(data.mouseY !== null) my_data.mouseY = data.mouseY; 
 }; 
+
+var checkIfOOB = function (data) {
+    if (data.x < 0) data.x = 0; 
+    if (data.y < 0) data.y = 0; 
+    if (data.x > game_context.map_width) data.x = game_context.map_width; 
+    if (data.y > game_context.map_height) data.y = game_context.map_height; 
+}
 
 var recalculate = function () {
     for (var i = 0; i < game_context.num_users; i++) {
-        var my_data = game_context.user_data[i]; 
-        my_data.x += (my_data.mouseX - my_data.x)/20; 
-        my_data.y += (my_data.mouseY - my_data.y)/20; 
-    }
+        var my_data = game_context.user_data[i];
+        var diffX = (my_data.mouseX - my_data.x)/20;
+        var diffY = (my_data.mouseY - my_data.y)/20; 
+        my_data.x += diffX;
+        my_data.y += diffY; 
+        my_data.mouseX += diffX; 
+        my_data.mouseY += diffY; 
+        checkIfOOB(my_data); 
+    };
     io.emit('drawNow', game_context.user_data); 
     // console.log(game_context.user_data); 
     setTimeout(recalculate, 30); 
