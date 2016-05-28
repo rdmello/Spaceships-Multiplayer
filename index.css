@@ -1,0 +1,12 @@
+
+html {
+    position: fixed;
+}
+
+body, html {
+    margin: 0px; 
+}
+
+#canvas {
+    position: absolute; 
+}
