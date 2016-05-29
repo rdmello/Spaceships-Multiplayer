@@ -9,8 +9,11 @@ var socket = io('/', {path: '/spaceships/socket.io'});
 socket.on('setup', function (data) {
     console.log(data); 
     my_data = data; 
+    setTimeout(sendMousePosn, 30); 
     drawGrid(data); 
 }); 
+
+socket.on('updateID', function (newid) {my_data.id = newid}); 
 
 socket.on('drawNow', function (data) {
     refreshCanvas(); 
@@ -25,7 +28,9 @@ socket.on('drawNow', function (data) {
 }); 
 
 var drawGrid = function (data) {
-    // console.log(data); 
+    // console.log(data);
+    my_data.mouseX += data.x - my_data.x;
+    my_data.mouseY += data.y - my_data.y;
     my_data.x = data.x; 
     my_data.y = data.y; 
 
@@ -68,11 +73,12 @@ document.addEventListener("DOMContentLoaded", function (event) {
 });
 
 var readMousePosn = function (event) {
-    var data = {
-        id: my_data.id,
-        mouseX: my_data.x-(page_width /2)+event.pageX, 
-        mouseY: my_data.y-(page_height/2)+event.pageY
-    };
-    console.log(data); 
-    socket.emit('mousePosition', data); 
+    my_data.mouseX = my_data.x-(page_width /2)+event.pageX;
+    my_data.mouseY = my_data.y-(page_height/2)+event.pageY;
+}
+
+var sendMousePosn = function () {
+    socket.emit('mousePosition', my_data); 
+//    console.log(my_data); 
+    setTimeout(sendMousePosn, 200); 
 }

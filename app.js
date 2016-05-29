@@ -34,7 +34,16 @@ io.on('connection', function (socket) {
    
     socket.on('mousePosition', function (data) {
         update_user(data);
+    });
+
+    socket.on('disconnect', function () {
+        remove_user(my_data.id); 
     }); 
+
+    // game_context.user_data[my_data.id].updateID = function () {
+    my_data.updateID = function () {
+        socket.emit('updateID', my_data.id); 
+    }
 }); 
 
 var game_context = (function(){
@@ -57,6 +66,15 @@ var new_user = function () {
     game_context.user_data.push(my_data); 
     return my_data; 
 };
+
+var remove_user = function (num) {
+    game_context.user_data.splice(num, 1);
+    for (var i=num; i<game_context.num_users-1; i++) {
+        game_context.user_data[i].id = i; 
+        game_context.user_data[i].updateID(); 
+    }
+    game_context.num_users -= 1; 
+}
 
 var update_user = function (data) {
     var my_data = game_context.user_data[data.id]; 
