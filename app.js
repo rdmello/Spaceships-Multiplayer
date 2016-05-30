@@ -107,8 +107,8 @@ var checkIfOOB = function (data) {
 var recalculate = function () {
     for (var i = 0; i < game_context.num_users; i++) {
         var my_data = game_context.user_data[i];
-        var diffX = (my_data.mouseX - my_data.x)/20;
-        var diffY = (my_data.mouseY - my_data.y)/20; 
+        var diffX = (my_data.mouseX - my_data.x)/5;
+        var diffY = (my_data.mouseY - my_data.y)/5; 
         my_data.x += diffX;
         my_data.y += diffY; 
         my_data.mouseX += diffX; 
@@ -117,9 +117,9 @@ var recalculate = function () {
     };
     wss.broadcast(JSON.stringify({data: game_context.user_data, type: 'drawNow'})); 
     // console.log(game_context.user_data); 
-    setTimeout(recalculate, 30); 
+    setTimeout(recalculate, 100); 
 }
 
-setTimeout(recalculate, 30); 
+setTimeout(recalculate, 100); 
 
 

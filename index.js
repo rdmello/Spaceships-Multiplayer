@@ -44,6 +44,7 @@ var drawGrid = function (data) {
     ctx.strokeStyle = grid_color; 
     for (var i=0; i<150; i++) {
         for (var j=0; j<100; j++) {
+//            ctx.strokeStyle = "rgb("+Math.floor(255*(1-(i/150)))+","+Math.floor(255*j/100)+","+Math.floor(255*i/150)+")";
             ctx.strokeRect(i*20, j*20, 20, 20); 
         }
     }
