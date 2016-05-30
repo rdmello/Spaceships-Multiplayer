@@ -3,29 +3,35 @@ var ctx;
 var my_data; 
 var page_width; 
 var page_height; 
+var grid_color = "rgb(220,230,230)"; 
 
-var socket = io('/', {path: '/spaceships/socket.io'}); 
+var ws = new WebSocket('wss://rylan.coffee/spaceships/'); 
 
-socket.on('setup', function (data) {
-    console.log(data); 
-    my_data = data; 
-    setTimeout(sendMousePosn, 30); 
-    drawGrid(data); 
-}); 
+ws.onopen = function (event) {
+    console.log("Connected to WebSocket server"); 
+};
 
-socket.on('updateID', function (newid) {my_data.id = newid}); 
-
-socket.on('drawNow', function (data) {
-    refreshCanvas(); 
-    drawGrid(data[my_data.id]);
-    
-    ctx.translate(-(data[my_data.id].x - (page_width/2)), -(data[my_data.id].y - (page_height/2)));
-    for (var i=0; i<data.length; i++) {
-        var thisdata = data[i]; 
-        drawCircle(thisdata); 
-    }
-    ctx.translate(data[my_data.id].x - (page_width/2), data[my_data.id].y - (page_height/2));
-}); 
+ws.onmessage = function (event) {
+    var message = JSON.parse(event.data); 
+    if (message.type === "setup") {
+        console.log(message.data); 
+        my_data = message.data; 
+        setTimeout(sendMousePosn, 30); 
+        drawGrid(message.data); 
+    } else if (message.type === "updateID") {
+        my_data.id = message.newid;
+    } else if (message.type === "drawNow") {
+        refreshCanvas(); 
+        drawGrid(message.data[my_data.id]);
+        
+        ctx.translate(-(message.data[my_data.id].x - (page_width/2)), -(message.data[my_data.id].y - (page_height/2)));
+        for (var i=0; i<message.data.length; i++) {
+            var thisdata = message.data[i]; 
+            drawCircle(thisdata); 
+        }
+        ctx.translate(message.data[my_data.id].x - (page_width/2), message.data[my_data.id].y - (page_height/2));
+    };
+}; 
 
 var drawGrid = function (data) {
     // console.log(data);
@@ -35,7 +41,7 @@ var drawGrid = function (data) {
     my_data.y = data.y; 
 
     ctx.translate(-(data.x - (page_width/2)), -(data.y - (page_height/2)));
-    ctx.strokeStyle = "blue"; 
+    ctx.strokeStyle = grid_color; 
     for (var i=0; i<150; i++) {
         for (var j=0; j<100; j++) {
             ctx.strokeRect(i*20, j*20, 20, 20); 
@@ -78,7 +84,7 @@ var readMousePosn = function (event) {
 }
 
 var sendMousePosn = function () {
-    socket.emit('mousePosition', my_data); 
-//    console.log(my_data); 
+    ws.send(JSON.stringify({type: 'mousePosition', data: my_data}));
+//  console.log(my_data); 
     setTimeout(sendMousePosn, 200); 
 }

@@ -1,7 +1,8 @@
 // Rylan Dmello 27 May 2016
 
 var app = require('http').createServer(handler);
-var io = require('socket.io')(app); 
+var WebSocketServer = require('ws').Server; 
+var wss = new WebSocketServer({ server: app }); 
 var fs = require('fs'); 
 var files = ['/index.html', '/index.js', '/index.css']; 
 
@@ -26,25 +27,39 @@ function handler (req, res) {
     }; 
 }
 
-io.on('connection', function (socket) {
+wss.on('connection', function (ws) {
+    
+    console.log("Client Connected!"); 
     var my_data = new_user(); 
-
-    console.log('Connection Opened'); 
-    socket.emit('setup', my_data); 
-   
-    socket.on('mousePosition', function (data) {
-        update_user(data);
-    });
-
-    socket.on('disconnect', function () {
-        remove_user(my_data.id); 
+    var setup_msg = {data: my_data, type: "setup"}; 
+    ws.send(JSON.stringify(setup_msg)); 
+    
+    ws.on('message', function (data) {
+        var message = JSON.parse(data);  
+        if (message.type === "mousePosition") {
+            update_user(message.data); 
+        }
     }); 
 
-    // game_context.user_data[my_data.id].updateID = function () {
+    ws.on('close', function () {
+        console.log("Client disconnected"); 
+        // remove_user(my_data.id); 
+    }); 
+
+    // Attach updateID function when other clients leave
     my_data.updateID = function () {
-        socket.emit('updateID', my_data.id); 
+        ws.send(JSON.stringify({type: 'updateID', newid: my_data.id})); 
     }
 }); 
+
+// Setup up broadcast function for websockets
+wss.broadcast = function (data) {
+    wss.clients.forEach(function (client) {
+        client.send(data, function (error) {
+            if(error) {console.log("Socket broadcast error"); }; 
+        });
+    }); 
+};
 
 var game_context = (function(){
     var game_data = {}; 
@@ -100,7 +115,7 @@ var recalculate = function () {
         my_data.mouseY += diffY; 
         checkIfOOB(my_data); 
     };
-    io.emit('drawNow', game_context.user_data); 
+    wss.broadcast(JSON.stringify({data: game_context.user_data, type: 'drawNow'})); 
     // console.log(game_context.user_data); 
     setTimeout(recalculate, 30); 
 }
