@@ -1,9 +1,8 @@
 var canvas;
 var ctx; 
-var my_data; 
 var page_width; 
 var page_height; 
-var grid_color = "rgb(220,230,230)"; 
+var mouseData = []; 
 
 var ws = new WebSocket('wss://rylan.coffee/spaceships/'); 
 
@@ -11,62 +10,70 @@ ws.onopen = function (event) {
     console.log("Connected to WebSocket server"); 
 };
 
-ws.onmessage = function (event) {
-    var message = JSON.parse(event.data); 
-    if (message.type === "setup") {
-        console.log(message.data); 
-        my_data = message.data; 
-        setTimeout(sendMousePosn, 30); 
-        drawGrid(message.data); 
-    } else if (message.type === "updateID") {
-        my_data.id = message.newid;
-    } else if (message.type === "drawNow") {
-        refreshCanvas(); 
-        drawGrid(message.data[my_data.id]);
+var id; 
+ws.onmessage = function (evt) {
+    var message = JSON.parse(evt.data); 
+    var game; 
+    if (message.type === 'id') {
+        id = message.id; 
         
-        ctx.translate(-(message.data[my_data.id].x - (page_width/2)), -(message.data[my_data.id].y - (page_height/2)));
-        for (var i=0; i<message.data.length; i++) {
-            var thisdata = message.data[i]; 
-            drawCircle(thisdata); 
-        }
-        ctx.translate(message.data[my_data.id].x - (page_width/2), message.data[my_data.id].y - (page_height/2));
+        // Add Event Listener for Mouse Move
+        canvas.addEventListener("mousemove", readMousePosn); 
+        canvas.addEventListener("touchmove", readMousePosn); 
+
+        setTimeout(sendMousePosn, 200); 
+
+    } else if (message.type === 'update') {
+        game = message.data; 
+        updateCanvas(id, game);
     };
-}; 
+}
 
-var drawGrid = function (data) {
-    // console.log(data);
-    my_data.mouseX += data.x - my_data.x;
-    my_data.mouseY += data.y - my_data.y;
-    my_data.x = data.x; 
-    my_data.y = data.y; 
+var updateCanvas = function (id, game) {
 
-    ctx.translate(-(data.x - (page_width/2)), -(data.y - (page_height/2)));
-    ctx.strokeStyle = grid_color; 
+    // Find current base
+    var myBase = (game.bases.filter(function (base) {return base.id === id;}))[0];
+
+    // Clear canvas
+    ctx.fillStyle = "white"; 
+    ctx.fillRect (-100, -100, page_width + 200, page_height + 200); 
+  
+    // Translate Canvas to Global Game Coordinates
+    // such that myBase is at the center
+    ctx.translate(-(myBase.posX - (page_width/2)), -(myBase.posY - (page_height/2)));
+
+    // Draw Grid
+    ctx.strokeStyle = "rgb(220,230,230)";  
     for (var i=0; i<150; i++) {
         for (var j=0; j<100; j++) {
-//            ctx.strokeStyle = "rgb("+Math.floor(255*(1-(i/150)))+","+Math.floor(255*j/100)+","+Math.floor(255*i/150)+")";
             ctx.strokeRect(i*20, j*20, 20, 20); 
         }
-    }
-    ctx.translate(data.x - (page_width/2), data.y - (page_height/2));
-}
+    };
 
-var refreshCanvas = function() {
-    ctx.fillStyle="white"; 
-    ctx.fillRect(-100,-100,page_width+200, page_height+200); 
-    ctx.fillStyle="black"; 
-}
+    // Draw Bases and Spaceships
+    game.bases.forEach(function (base) {
+        // Draw base
+        ctx.fillStyle = "black"; 
+        ctx.fillRect(base.posX-(base.size/2), base.posY-(base.size/2), base.size, base.size);
+        ctx.strokeStyle = "black"; 
+        ctx.strokeRect(base.posX-(base.maxShipDistance), base.posY-(base.maxShipDistance), 2*base.maxShipDistance, 2*base.maxShipDistance);
 
-var drawCircle = function (data) {
-    ctx.fillRect(data.x-20, data.y-20, 40, 40); 
-};
+        // Draw spaceships
+        base.ships.forEach(function (ship) {
+            ctx.fillStyle = "red"; 
+            ctx.fillRect(ship.posX-(ship.size/2), ship.posY-(ship.size/2), ship.size, ship.size); 
+        }); 
+    }); 
+
+    // Translate the canvas back to original coordinates
+    ctx.translate(myBase.posX - (page_width/2), myBase.posY - (page_height/2));
+}
 
 // Initialize HTML canvas on page load
 document.addEventListener("DOMContentLoaded", function (event) {
     // Set global canvas element
     canvas = document.getElementById("canvas");
     ctx = canvas.getContext('2d');
-    ctx.fillStyle = "rgb(200,0,0)"; 
 
     // Resize canvas to fit full window
     canvas.width = window.innerWidth; 
@@ -74,18 +81,14 @@ document.addEventListener("DOMContentLoaded", function (event) {
     page_width = window.innerWidth; 
     page_height = window.innerHeight; 
 
-    // Add Event Listener for Mouse Move
-    canvas.addEventListener("mousemove", readMousePosn); 
-    canvas.addEventListener("touchmove", readMousePosn); 
+    mouseData = [page_width/2, page_height/2]; 
 });
 
 var readMousePosn = function (event) {
-    my_data.mouseX = my_data.x-(page_width /2)+event.pageX;
-    my_data.mouseY = my_data.y-(page_height/2)+event.pageY;
+    mouseData = [-(page_width/2)+event.pageX, -(page_height/2)+event.pageY]; 
 }
 
 var sendMousePosn = function () {
-    ws.send(JSON.stringify({type: 'mousePosition', data: my_data}));
-//  console.log(my_data); 
+    ws.send(JSON.stringify({type: 'mousePosition', data: mouseData}));
     setTimeout(sendMousePosn, 200); 
 }

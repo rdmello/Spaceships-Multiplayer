@@ -40,9 +40,10 @@ Game.prototype = {
 
     removeBase: function (id) {
         var oldbase; 
+        var that = this; 
         this.bases.forEach(function (base, idx){
             if (base.id === id) {
-                oldbase = this.bases.splice(idx, 1); 
+                oldbase = that.bases.splice(idx, 1); 
             }
         });
         return oldbase; 
@@ -52,25 +53,25 @@ Game.prototype = {
         var mw = this.gameSettings.mapWidth; 
         var mh = this.gameSettings.mapHeight; 
 
-        if (base.posX < 0 ) base.posX = 0 - base.posX;  
-        if (base.posY < 0 ) base.posY = 0 - base.posY;  
-        if (base.posX > mw) base.posX = mw- base.posX;  
-        if (base.posY > mh) base.posY = mh- base.posY;  
+        if (base.posX < 0 ) base.posX = 0;  
+        if (base.posY < 0 ) base.posY = 0;  
+        if (base.posX > mw) base.posX = mw;  
+        if (base.posY > mh) base.posY = mh;  
 
         base.ships.forEach(function (ship, idx) {
             if (ship.posX < 0) { 
-                ship.posX = 0 - ship.posX; 
+                ship.posX = 0; 
                 ship.velX = 0 - ship.velX; 
             } else if (ship.posX > mw ) { 
-                ship.posX = mw- ship.posX;  
+                ship.posX = mw;  
                 ship.velX = 0 - ship.velX; 
             }; 
 
             if (ship.posY < 0) { 
-                ship.posY = 0 - ship.posY; 
+                ship.posY = 0; 
                 ship.velY = 0 - ship.velY; 
             } else if (ship.posY > mh) {
-                ship.posY = mh- ship.posY;  
+                ship.posY = mh;  
                 ship.velY = 0 - ship.velY; 
             }; 
         }); 
@@ -86,9 +87,6 @@ Game.prototype = {
     }, 
 
     resolveCollisions: function (base, collisions) {
-        collisions.forEach(function (el) {
-
-        }); 
     }, 
 
         // Add a base to the removal Queue
@@ -97,17 +95,20 @@ Game.prototype = {
     }, 
 
     removeDeadBases: function () {
+        var that = this; 
         this.removalQueue.forEach(function (base) {
-            var oldbase = this.removeBase(base.id); 
-            this.addBase(oldbase.socket, oldbase.id); 
-        }); 
+            var oldbase = that.removeBase(base.id); 
+            that.addBase(oldbase.socket, oldbase.id); 
+        });
+
+        this.removalQueue = []; 
     },
 
     sendUpdates: function (socket) {
         socket.send(this.pack()); 
     },
 
-        // Method to send information to View layer
+    // Method to send information to View layer
     pack: function () {
         return JSON.stringify({data: this, type: 'update'}); 
     }
@@ -153,8 +154,8 @@ Base.prototype = {
     },
 
     updateMousePosition: function (newMousePos) { 
-        if (newMousePos[0] !== null) this.mousePosition[0] = newMousePos[0]; 
-        if (newMousePos[1] !== null) this.mousePosition[1] = newMousePos[1]; 
+        if (newMousePos[0] !== null) this.mousePosition[0] = this.posX + newMousePos[0]; 
+        if (newMousePos[1] !== null) this.mousePosition[1] = this.posY + newMousePos[1]; 
         this.updatePosition(); 
     }, 
 
@@ -187,8 +188,8 @@ function Ship (base) {
     this.velX = base.maxShipVel*Math.sin(theta);
     this.velY = base.maxShipVel*Math.cos(theta); 
     this.size = 20; 
-    this.multVel = 0.1; 
-    this.multAcc = 0.1; 
+    this.multVel = 1; 
+    this.multAcc = 1; 
     this.damage = 10; 
 }
 
@@ -200,8 +201,11 @@ Ship.prototype = {
         var diffY = this.posY - base.posY;
         var theta = Math.atan(diffY/diffX); 
         var disp = Math.sqrt((diffX*diffX) + (diffY*diffY)); 
+        // this.velX += this.multAcc*Math.cos(theta)*((1/(disp-base.size))+(1/(base.maxShipDistance-disp)));
+        // this.velY += this.multAcc*Math.sin(theta)*((1/(disp-base.size))+(1/(base.maxShipDistance-disp)));
         this.velX += this.multAcc*Math.cos(theta)*((1/(disp-base.size))+(1/(base.maxShipDistance-disp)));
         this.velY += this.multAcc*Math.sin(theta)*((1/(disp-base.size))+(1/(base.maxShipDistance-disp)));
+
         this.posX += this.multVel*this.velX; 
         this.posY += this.multVel*this.velY; 
     }
@@ -216,4 +220,4 @@ var generate_GUID = function () {
     });
 }
 
-exports.newGame = new Game(); 
+module.exports = Game; 

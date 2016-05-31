@@ -5,7 +5,8 @@ var WebSocketServer = require('ws').Server;
 var wss = new WebSocketServer({ server: app }); 
 var fs = require('fs'); 
 var files = ['/index.html', '/index.js', '/index.css']; 
-var game = require('./models.js'); 
+var Game = require('./models.js'); 
+var game = new Game(); 
 
 console.log(game); 
 
@@ -34,7 +35,7 @@ wss.on('connection', function (ws) {
 
     var base = game.addBase(ws); 
     base.addShips(3); 
-    ws.send(JSON.stringify({type:'id', id: base.id})); 
+    ws.send(JSON.stringify({id: base.id, type: 'id'})); 
     game.sendUpdates(ws); 
 
     ws.on('message', function (data) {
