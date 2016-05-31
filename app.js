@@ -52,6 +52,27 @@ wss.on('connection', function (ws) {
     }
 }); 
 
+wss.on('connection', function (ws) {
+
+    var base = game.addBase(ws); 
+    ws.send(base.pack()); 
+
+    ws.on('message', function (data) {
+        var message = JSON.parse(data);
+        if (message.type === 'mousePosition') {
+            base.updateMousePosition(message.data); 
+            game.checkIfOOB(base); 
+            var collisions = game.checkBaseCollisions(base); 
+            game.resolveCollisions(base, collisions); 
+            game.removeDeadBases(); 
+        }; 
+    }); 
+
+    ws.on('close', function () {
+        game.tearDownBase(base); 
+    }); 
+}); 
+
 // Setup up broadcast function for websockets
 wss.broadcast = function (data) {
     wss.clients.forEach(function (client) {
