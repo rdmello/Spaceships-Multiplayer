@@ -11,9 +11,9 @@ ws.onopen = function (event) {
 };
 
 var id; 
+var game; 
 ws.onmessage = function (evt) {
     var message = JSON.parse(evt.data); 
-    var game; 
     if (message.type === 'id') {
         id = message.id; 
         
@@ -90,5 +90,5 @@ var readMousePosn = function (event) {
 
 var sendMousePosn = function () {
     ws.send(JSON.stringify({type: 'mousePosition', data: mouseData}));
-    setTimeout(sendMousePosn, 200); 
+    setTimeout(sendMousePosn, 100); 
 }
