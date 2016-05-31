@@ -38,18 +38,40 @@ Game.prototype = {
     },
 
     removeBase: function (id) {
+        var oldbase; 
         this.bases.forEach(function (base, idx){
             if (base.id === id) {
-                this.bases.splice(idx, 1); 
+                oldbase = this.bases.splice(idx, 1); 
             }
         });
+        return oldbase; 
     }, 
-    
-    checkIfOOB: function (base) {
-        if (this.posX < 0) this.posX = 0 - this. posX;  
-        if (this.posY < 0) this.posY = 0 - this. posY;  
-        if (this.posX >  0) this.posX = 0 - this. posX;  
-        if (this.posY < 0) this.posY = 0 - this. posY;  
+
+    fixOOB: function (base) {
+        var mw = this.gameSettings.mapWidth; 
+        var mh = this.gameSettings.mapHeight; 
+
+        if (base.posX < 0 ) base.posX = 0 - base.posX;  
+        if (base.posY < 0 ) base.posY = 0 - base.posY;  
+        if (base.posX > mw) base.posX = mw- base.posX;  
+        if (base.posY > mh) base.posY = mh- base.posY;  
+        base.ships.forEach(function (ship, idx) {
+            if (ship.posX < 0) { 
+                ship.posX = 0 - ship.posX; 
+                ship.velX = 0 - ship.velX; 
+            } else if (ship.posX > mw ) { 
+                ship.posX = mw- ship.posX;  
+                ship.velX = 0 - ship.velX; 
+            }; 
+
+            if (ship.posY < 0) { 
+                ship.posY = 0 - ship.posY; 
+                ship.velY = 0 - ship.velY; 
+            } else if (ship.posY > mh) {
+                ship.posY = mh- ship.posY;  
+                ship.velY = 0 - ship.velY; 
+            }; 
+        }); 
     }, 
 
     checkBaseCollisions: function (base) {
@@ -67,18 +89,23 @@ Game.prototype = {
         }); 
     }, 
 
-    // Add a base to the removal Queue
+        // Add a base to the removal Queue
     tearDownBase: function (base) {
         this.removalQueue.push(base); 
     }, 
 
     removeDeadBases: function () {
         this.removalQueue.forEach(function (base) {
-            this.removeBase(base.id); 
-        }; 
+            var oldbase = this.removeBase(base.id); 
+            this.addBase(oldbase.socket, oldbase.id); 
+        }); 
     },
 
-    // Method to send information to View layer
+    sendUpdates: function (socket) {
+        socket.send(this.pack()); 
+    },
+
+        // Method to send information to View layer
     pack: function () {
         return JSON.stringify({data: this, type: 'update'}); 
     }
@@ -127,7 +154,7 @@ Base.prototype = {
         this.mouseX += diffX; 
         this.mouseY += diffY; 
         this.ships.forEach(function (ship) {
-            ship.updatePosition(); 
+            ship.updatePosition(this); 
         }); 
     }, 
 
@@ -141,7 +168,7 @@ Base.prototype = {
  * an ID.
  */
 function Ship (base) {
-    var theta = 2*pi*Math.random();  
+    var theta = 2*Math.PI*Math.random();  
     this.posX = base.posX+(base.maxShipDistance*Math.cos(theta)); 
     this.posY = base.posY+(base.maxShipDistance*Math.sin(theta)); 
     this.velX = maxShipVel*Math.sin(theta) 
@@ -150,6 +177,21 @@ function Ship (base) {
     this.multVel = 30; 
     this.multAcc = 20; 
     this.damage = 10; 
+}
+
+Ship.prototype = {
+    constructor: Ship,
+
+    updatePosition: function (base) {
+        var diffX = this.posX - base.posX; 
+        var diffY = this.posY - base.posY;
+        var theta = atan(diffY/diffX); 
+        var disp = Math.sqrt((diffX*diffX) + (diffY*diffY)); 
+        this.velX += (-1)*this.multAcc*Math.cos(theta)/(disp*disp); 
+        this.velY += (-1)*this.multAcc*Math.sin(theta)/(disp*disp); 
+        this.posX += this.multVel*this.velX; 
+        this.posY += this.multVel*this.velY; 
+    }
 }
 
 // Convenience function to generate GUID. 

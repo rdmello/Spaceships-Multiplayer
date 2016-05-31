@@ -55,16 +55,18 @@ wss.on('connection', function (ws) {
 wss.on('connection', function (ws) {
 
     var base = game.addBase(ws); 
-    ws.send(base.pack()); 
+    ws.send(JSON.stringify({type:'id', id: base.id}); 
+    game.sendUpdates(ws); 
 
     ws.on('message', function (data) {
         var message = JSON.parse(data);
         if (message.type === 'mousePosition') {
             base.updateMousePosition(message.data); 
-            game.checkIfOOB(base); 
+            game.fixOOB(base); 
             var collisions = game.checkBaseCollisions(base); 
             game.resolveCollisions(base, collisions); 
             game.removeDeadBases(); 
+            game.sendUpdates(ws);
         }; 
     }); 
 
