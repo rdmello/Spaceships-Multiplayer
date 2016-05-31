@@ -21,8 +21,7 @@ function Game () {
         mapHeight: 2000,
         maxNumUsers: 20, 
         maxShips: 10, 
-        maxBaseVel: 100, 
-        maxShipVel: 200
+        maxBaseVel: 100 
     };
     this.bases = []; 
     this.removalQueue = []; 
@@ -34,7 +33,9 @@ Game.prototype = {
 
     addBase: function (socket, id) {
         this.totalUsers++; 
-        this.bases.push(new Base(this, socket, id)); 
+        var base = new Base(this, socket, id); 
+        this.bases.push(base); 
+        return base; 
     },
 
     removeBase: function (id) {
@@ -55,6 +56,7 @@ Game.prototype = {
         if (base.posY < 0 ) base.posY = 0 - base.posY;  
         if (base.posX > mw) base.posX = mw- base.posX;  
         if (base.posY > mh) base.posY = mh- base.posY;  
+
         base.ships.forEach(function (ship, idx) {
             if (ship.posX < 0) { 
                 ship.posX = 0 - ship.posX; 
@@ -124,7 +126,8 @@ function Base (game, socket, id) {
     this.multVel = 0.2;  
     this.ships = []; 
     this.score = [0, 0]; 
-    this.maxShipDistance = 10;  
+    this.maxShipDistance = 200;  
+    this.maxShipVel = 20;
     this.mousePosition = []; 
     this.socket; 
 }; 
@@ -133,17 +136,26 @@ Base.prototype = {
     constructor: Base, 
 
     addShip: function () {
-        this.ships.push(new Ship(this)); 
+        var ship = new Ship(this); 
+        this.ships.push(ship); 
+        return ship; 
     }, 
+
+    addShips: function (num) {
+        var actualNum = typeof num === 'undefined' ? 1 : num; 
+        for (var i = 0; i < num; i++) {
+            this.ships.push(new Ship(this)); 
+        }; 
+    },
 
     removeShip: function (idx) {
         this.ships.splice(idx, 1); 
-    }
+    },
 
     updateMousePosition: function (newMousePos) { 
         if (newMousePos[0] !== null) this.mousePosition[0] = newMousePos[0]; 
         if (newMousePos[1] !== null) this.mousePosition[1] = newMousePos[1]; 
-        updatePosition(); 
+        this.updatePosition(); 
     }, 
 
     updatePosition: function () {
@@ -151,10 +163,11 @@ Base.prototype = {
         var diffY = (this.mousePosition[1] - this.posY)*this.multVel; 
         this.posX += diffX; 
         this.posY += diffY;
-        this.mouseX += diffX; 
-        this.mouseY += diffY; 
+        this.mousePosition[0] += diffX; 
+        this.mousePosition[1] += diffY; 
+        var that = this; 
         this.ships.forEach(function (ship) {
-            ship.updatePosition(this); 
+            ship.updatePosition(that); 
         }); 
     }, 
 
@@ -169,13 +182,13 @@ Base.prototype = {
  */
 function Ship (base) {
     var theta = 2*Math.PI*Math.random();  
-    this.posX = base.posX+(base.maxShipDistance*Math.cos(theta)); 
-    this.posY = base.posY+(base.maxShipDistance*Math.sin(theta)); 
-    this.velX = maxShipVel*Math.sin(theta) 
-        this.velY = maxShipVel*Math.cos(theta) 
-        this.size = 20; 
-    this.multVel = 30; 
-    this.multAcc = 20; 
+    this.posX = base.posX+((base.maxShipDistance+base.size)*Math.cos(theta)/2); 
+    this.posY = base.posY+((base.maxShipDistance+base.size)*Math.sin(theta)/2); 
+    this.velX = base.maxShipVel*Math.sin(theta);
+    this.velY = base.maxShipVel*Math.cos(theta); 
+    this.size = 20; 
+    this.multVel = 0.1; 
+    this.multAcc = 0.1; 
     this.damage = 10; 
 }
 
@@ -185,10 +198,10 @@ Ship.prototype = {
     updatePosition: function (base) {
         var diffX = this.posX - base.posX; 
         var diffY = this.posY - base.posY;
-        var theta = atan(diffY/diffX); 
+        var theta = Math.atan(diffY/diffX); 
         var disp = Math.sqrt((diffX*diffX) + (diffY*diffY)); 
-        this.velX += (-1)*this.multAcc*Math.cos(theta)/(disp*disp); 
-        this.velY += (-1)*this.multAcc*Math.sin(theta)/(disp*disp); 
+        this.velX += this.multAcc*Math.cos(theta)*((1/(disp-base.size))+(1/(base.maxShipDistance-disp)));
+        this.velY += this.multAcc*Math.sin(theta)*((1/(disp-base.size))+(1/(base.maxShipDistance-disp)));
         this.posX += this.multVel*this.velX; 
         this.posY += this.multVel*this.velY; 
     }
@@ -202,3 +215,5 @@ var generate_GUID = function () {
         return v.toString(16);
     });
 }
+
+exports.newGame = new Game(); 
