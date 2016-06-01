@@ -18,6 +18,8 @@ ws.onmessage = function (evt) {
         id = message.id; 
         
         // Add Event Listener for Mouse Move
+        // This is done AFTER initial message to avoid
+        // empty mousemove messages
         canvas.addEventListener("mousemove", readMousePosn); 
         canvas.addEventListener("touchmove", readMousePosn); 
 
