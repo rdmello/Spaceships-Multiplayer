@@ -5,11 +5,10 @@ var WebSocketServer = require('ws').Server;
 var wss = new WebSocketServer({ server: app }); 
 var fs = require('fs'); 
 var files = ['/index.html', '/index.js', '/index.css']; 
-var Game = require('./models.js'); 
+var Game = require('./models/Game.js'); 
 var game = new Game(); 
 
 console.log(game); 
-
 app.listen(3100); 
 
 function handler (req, res) {
