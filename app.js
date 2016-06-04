@@ -7,6 +7,7 @@ var fs = require('fs');
 var files = ['/index.html', '/index.js', '/index.css']; 
 var Game = require('./models/Game.js'); 
 var game = new Game(); 
+// setInterval(game.updateBotPositions, 100);
 
 console.log(game); 
 app.listen(3100); 
@@ -42,10 +43,14 @@ wss.on('connection', function (ws) {
         if (message.type === 'mousePosition') {
             base.updateMousePosition(message.data); 
             game.fixOOB(base); 
+            game.resolveBotCollisions(base); 
             var collisions = game.checkBaseCollisions(base); 
             game.resolveCollisions(base, collisions); 
             game.removeDeadBases(); 
             game.sendUpdates(ws);
+        } else if (message.type === 'clientDimensions') {
+            base.clientWidth  = message.data.page_width; 
+            base.clientHeight = message.data.page_height; 
         }; 
     }); 
 

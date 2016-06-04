@@ -10,6 +10,7 @@
 //    of spaceships to limit usage. 
 
 var Base = require('./Base.js');
+var Bot = require('./Bot.js');
 
 /* GAME OBJECT
  * This encapsulates the starting parameters of the game
@@ -23,11 +24,22 @@ function Game () {
         mapHeight: 2000,
         maxNumUsers: 20, 
         maxShips: 10, 
-        maxBaseVel: 100 
+        maxBaseVel: 100, 
+        numBots: 100
     };
     this.bases = []; 
+    this.bots = []; 
     this.removalQueue = []; 
     this.totalUsers = 0; 
+
+    // Set initial bot positions
+    for (var i = 0; i < this.gameSettings.numBots; i++) {
+        this.bots.push(new Bot(this)); 
+    };      
+
+    var that = this; 
+    // Set updates for bots
+    setInterval(function () {that.updateBotPositions();}, 100); 
 };
 
 Game.prototype = {
@@ -93,7 +105,7 @@ Game.prototype = {
             baseC.ships.forEach(function (ship) {
                 if (check_collision([base.posX, base.posY], base.size, 
                                     [ship.posX, ship.posY], ship.size)) {
-                    base.score -= ship.damage; 
+                    base.life -= ship.damage; 
                     baseC.removalQueue.push(ship); 
                 }
             }); 
@@ -102,7 +114,7 @@ Game.prototype = {
             base.ships.forEach(function (ship) {
                 if (check_collision([baseC.posX, baseC.posY], baseC.size, 
                                     [ship.posX, ship.posY], ship.size)) {
-                    baseC.score -= ship.damage; 
+                    baseC.life -= ship.damage; 
                     base.removalQueue.push(ship); 
                 }
             }); 
@@ -110,7 +122,11 @@ Game.prototype = {
             // Remove dead ships
             base.removeDeadShips(); 
             baseC.removeDeadShips(); 
+
+            if (baseC.life <= 0) this.removalQueue.push(baseC); 
         }); 
+
+        if (base.life <= 0) this.removalQueue.push(base); 
     },
         
 
@@ -123,11 +139,33 @@ Game.prototype = {
         var that = this; 
         this.removalQueue.forEach(function (base) {
             var oldbase = that.removeBase(base.id); 
-            that.addBase(oldbase.socket, oldbase.id); 
+            // that.addBase(oldbase.socket, oldbase.id); 
         });
 
         this.removalQueue = []; 
     },
+
+    updateBotPositions: function () {
+        var that = this; 
+        this.bots.forEach(function (bot) {
+            bot.posX += bot.velX; 
+            bot.posY += bot.velY; 
+            if ((bot.posX < 0) || (bot.posX > that.gameSettings.mapWidth )) bot.velX *= -1; 
+            if ((bot.posY < 0) || (bot.posY > that.gameSettings.mapHeight)) bot.velY *= -1; 
+        }); 
+    }, 
+
+    resolveBotCollisions: function (base) {
+        var that = this; 
+        this.bots.forEach(function (bot, idx) {
+            if (check_collision([bot.posX, bot.posY], bot.size,
+                                [base.posX, base.posY], base.size)) {
+                base.life += bot.damage; 
+                that.bots[idx] = new Bot(that); 
+            }; 
+        }); 
+        if (base.life <= 0) this.removalQueue.push(base); 
+    }, 
 
     sendUpdates: function (socket) {
         socket.send(this.pack()); 

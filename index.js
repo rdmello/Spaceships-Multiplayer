@@ -7,6 +7,13 @@ var mouseData = [];
 var ws = new WebSocket('wss://rylan.coffee/spaceships/'); 
 
 ws.onopen = function (event) {
+    ws.send(JSON.stringify({
+        type: clientDimensions, 
+        data: {
+            page_width : page_width, 
+            page_height: page_height
+        }
+    })); 
     console.log("Connected to WebSocket server"); 
 };
 
@@ -61,10 +68,31 @@ var updateCanvas = function (id, game) {
         ctx.strokeRect(base.posX-(base.maxShipDistance), base.posY-(base.maxShipDistance), 2*base.maxShipDistance, 2*base.maxShipDistance);
 
         // Draw spaceships
+        ctx.fillStyle = "black"; 
         base.ships.forEach(function (ship) {
-            ctx.fillStyle = "red"; 
             ctx.fillRect(ship.posX-(ship.size/2), ship.posY-(ship.size/2), ship.size, ship.size); 
         }); 
+
+        // Write points
+        ctx.fillStyle = "white";
+        ctx.textAlign = "center";
+        ctx.fillText(Math.floor(base.life), base.posX, base.posY); 
+    }); 
+
+    // Draw Bots
+    var foodBots = game.bots.filter(function (bot) {return bot.damage > 0}); 
+    var killBots = game.bots.filter(function (bot) {return bot.damage <= 0}); 
+
+    ctx.fillStyle = "green"; 
+    foodBots.forEach(function (bot) {
+        var size = bot.size; 
+        ctx.fillRect(bot.posX-size, bot.posY-size, size, size); 
+    }); 
+    
+    ctx.fillStyle = "red"; 
+    killBots.forEach(function (bot) {
+        var size = bot.size; 
+        ctx.fillRect(bot.posX-size, bot.posY-size, size, size); 
     }); 
 
     // Translate the canvas back to original coordinates
