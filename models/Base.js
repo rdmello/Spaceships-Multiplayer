@@ -19,6 +19,8 @@ function Base (game, socket, id) {
     this.maxShipVel = 20;
     this.mousePosition = []; 
     this.socket; 
+    this.clientWidth; 
+    this.clientHeight; 
 }; 
 
 Base.prototype = {

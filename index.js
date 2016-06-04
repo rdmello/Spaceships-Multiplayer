@@ -8,7 +8,7 @@ var ws = new WebSocket('wss://rylan.coffee/spaceships/');
 
 ws.onopen = function (event) {
     ws.send(JSON.stringify({
-        type: clientDimensions, 
+        type: "clientDimensions", 
         data: {
             page_width : page_width, 
             page_height: page_height
@@ -53,9 +53,10 @@ var updateCanvas = function (id, game) {
 
     // Draw Grid
     ctx.strokeStyle = "rgb(220,230,230)";  
-    for (var i=0; i<150; i++) {
-        for (var j=0; j<100; j++) {
-            ctx.strokeRect(i*20, j*20, 20, 20); 
+    var boxSize = 20;
+    for (var i=0; i<game.gameSettings.mapWidth/boxSize; i++) {
+        for (var j=0; j<game.gameSettings.mapHeight/boxSize; j++) {
+            ctx.strokeRect(i*boxSize, j*boxSize, boxSize, boxSize); 
         }
     };
 
@@ -63,9 +64,15 @@ var updateCanvas = function (id, game) {
     game.bases.forEach(function (base) {
         // Draw base
         ctx.fillStyle = "black"; 
-        ctx.fillRect(base.posX-(base.size/2), base.posY-(base.size/2), base.size, base.size);
+        ctx.beginPath();
+        ctx.arc(base.posX,base.posY,base.size/2,0,2*Math.PI);
+        ctx.fill();
+
+        // Draw base maxShipDistance
         ctx.strokeStyle = "black"; 
-        ctx.strokeRect(base.posX-(base.maxShipDistance), base.posY-(base.maxShipDistance), 2*base.maxShipDistance, 2*base.maxShipDistance);
+        ctx.beginPath();
+        ctx.arc(base.posX,base.posY,base.maxShipDistance,0,2*Math.PI);
+        ctx.stroke();
 
         // Draw spaceships
         ctx.fillStyle = "black"; 
@@ -73,7 +80,7 @@ var updateCanvas = function (id, game) {
             ctx.fillRect(ship.posX-(ship.size/2), ship.posY-(ship.size/2), ship.size, ship.size); 
         }); 
 
-        // Write points
+        // Write Score of each player
         ctx.fillStyle = "white";
         ctx.textAlign = "center";
         ctx.fillText(Math.floor(base.life), base.posX, base.posY); 
@@ -85,14 +92,16 @@ var updateCanvas = function (id, game) {
 
     ctx.fillStyle = "green"; 
     foodBots.forEach(function (bot) {
-        var size = bot.size; 
-        ctx.fillRect(bot.posX-size, bot.posY-size, size, size); 
+        ctx.beginPath();
+        ctx.arc(bot.posX,bot.posY,bot.size/2,0,2*Math.PI);
+        ctx.fill();
     }); 
     
     ctx.fillStyle = "red"; 
     killBots.forEach(function (bot) {
-        var size = bot.size; 
-        ctx.fillRect(bot.posX-size, bot.posY-size, size, size); 
+        ctx.beginPath();
+        ctx.arc(bot.posX,bot.posY,bot.size/2,0,2*Math.PI);
+        ctx.fill();
     }); 
 
     // Translate the canvas back to original coordinates

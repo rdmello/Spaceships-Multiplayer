@@ -20,12 +20,12 @@ var Bot = require('./Bot.js');
  */
 function Game () {
     this.gameSettings = {
-        mapWidth: 3000, 
-        mapHeight: 2000,
-        maxNumUsers: 20, 
+        mapWidth: 1500, 
+        mapHeight: 1000,
+        maxNumUsers: 10, 
         maxShips: 10, 
         maxBaseVel: 100, 
-        numBots: 100
+        numBots: 50
     };
     this.bases = []; 
     this.bots = []; 
@@ -79,7 +79,7 @@ Game.prototype = {
     checkBaseCollisions: function (base) {
         return this.bases.filter(function (el) {
             return ((base.id !== el.id) && 
-                    check_collision([base.posX, base.posY], base.maxShipDistance, [el.posX, el.posY], el.maxShipDistance));
+                    check_collision([base.posX, base.posY], base.maxShipDistance/2, [el.posX, el.posY], el.maxShipDistance/2));
         }); 
     }, 
 
@@ -93,8 +93,8 @@ Game.prototype = {
             // Check ship-ship collisions
             base.ships.forEach(function(ship1) {
                 baseC.ships.forEach(function (ship2) {
-                    if (check_collision([ship1.posX, ship1.posY], ship1.size, 
-                                        [ship2.posX, ship2.posY], ship2.size)) {
+                    if (check_collision([ship1.posX, ship1.posY], ship1.size/2, 
+                                        [ship2.posX, ship2.posY], ship2.size/2)) {
                         base.removalQueue.push(ship1); 
                         baseC.removalQueue.push(ship2); 
                     };    
@@ -103,8 +103,8 @@ Game.prototype = {
             
             // Check base-ship collisions
             baseC.ships.forEach(function (ship) {
-                if (check_collision([base.posX, base.posY], base.size, 
-                                    [ship.posX, ship.posY], ship.size)) {
+                if (check_collision([base.posX, base.posY], base.size/2, 
+                                    [ship.posX, ship.posY], ship.size/2)) {
                     base.life -= ship.damage; 
                     baseC.removalQueue.push(ship); 
                 }
@@ -112,8 +112,8 @@ Game.prototype = {
 
             // Check ship-baseC collision
             base.ships.forEach(function (ship) {
-                if (check_collision([baseC.posX, baseC.posY], baseC.size, 
-                                    [ship.posX, ship.posY], ship.size)) {
+                if (check_collision([baseC.posX, baseC.posY], baseC.size/2, 
+                                    [ship.posX, ship.posY], ship.size/2)) {
                     baseC.life -= ship.damage; 
                     base.removalQueue.push(ship); 
                 }
@@ -158,8 +158,8 @@ Game.prototype = {
     resolveBotCollisions: function (base) {
         var that = this; 
         this.bots.forEach(function (bot, idx) {
-            if (check_collision([bot.posX, bot.posY], bot.size,
-                                [base.posX, base.posY], base.size)) {
+            if (check_collision([bot.posX, bot.posY], bot.size/2,
+                                [base.posX, base.posY], base.size/2)) {
                 base.life += bot.damage; 
                 that.bots[idx] = new Bot(that); 
             }; 
