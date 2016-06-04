@@ -106,6 +106,7 @@ Game.prototype = {
                 if (check_collision([base.posX, base.posY], base.size/2, 
                                     [ship.posX, ship.posY], ship.size/2)) {
                     base.life -= ship.damage; 
+                    // base.size = base.life; 
                     baseC.removalQueue.push(ship); 
                 }
             }); 
@@ -115,6 +116,7 @@ Game.prototype = {
                 if (check_collision([baseC.posX, baseC.posY], baseC.size/2, 
                                     [ship.posX, ship.posY], ship.size/2)) {
                     baseC.life -= ship.damage; 
+                    // baseC.size = baseC.life; 
                     base.removalQueue.push(ship); 
                 }
             }); 
@@ -160,7 +162,8 @@ Game.prototype = {
         this.bots.forEach(function (bot, idx) {
             if (check_collision([bot.posX, bot.posY], bot.size/2,
                                 [base.posX, base.posY], base.size/2)) {
-                base.life += bot.damage; 
+                base.life += bot.damage;
+                // base.size = base.life;  
                 that.bots[idx] = new Bot(that); 
             }; 
         }); 

@@ -15,7 +15,7 @@ app.listen(3100);
 function handler (req, res) {
     var position = (req.url === '/') ? 0 : files.indexOf(req.url); 
     if (position > -1) {
-        fs.readFile(__dirname + files[position], function (err, data){
+        fs.readFile(__dirname + "/public" + files[position], function (err, data){
             if (err) {
                 res.writeHead(500); 
                 res.end('Error loading index.html'); 
