@@ -1,6 +1,6 @@
 # Spaceships Multiplayer
 
-Multiplayer game built using Socket.IO on Raspberry Pi Zero
+Multiplayer game built using ws on Raspberry Pi Zero
 
 Visit: https://rylan.coffee/spaceships/
 
@@ -10,7 +10,7 @@ Visit: https://rylan.coffee/spaceships/
 
 1. Clone this directory locally
 
-2. Install Socket.IO using NPM
+2. Install ws using NPM
 
 3. Use 'node app.js' to run the app
 
